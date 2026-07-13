@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard | BFARPFO Production Monitoring</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Source+Sans+3:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sidebar-bg: #1a3a4a;
+  --sidebar-active: #1f7a6c;
+  --sidebar-text: #c8d8dc;
+  --sidebar-muted: rgba(200,216,220,0.5);
+  --sidebar-border: rgba(200,216,220,0.12);
+  --topbar-bg: #ffffff;
+  --topbar-border: #e4e8e8;
+  --body-bg: #f0ebe0;
+  --card-bg: #ffffff;
+  --ink: #0c1f24;
+  --muted: #6b7a79;
+  --line: rgba(12,31,36,0.1);
+  --teal: #1f7a6c;
+  --teal-soft: rgba(31,122,108,0.1);
+  --deep: #1a3a4a;
+  --rust: #c0573a;
+  --rust-soft: rgba(192,87,58,0.1);
+  --blue: #3b5bab;
+  --blue-soft: rgba(59,91,171,0.1);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Source Sans 3', sans-serif; background: var(--body-bg); color: var(--ink); min-height: 100vh; display: flex; font-size: 14px; }
+
+/* ===== SIDEBAR ===== */
+.sidebar {
+  width: 200px;
+  background: var(--sidebar-bg);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  z-index: 100;
+}
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 16px;
+  border-bottom: 1px solid var(--sidebar-border);
+}
+.logo-circle {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  border: 2px solid var(--sidebar-active);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.logo-circle svg { width: 20px; height: 20px; }
+.logo-text { font-family: 'Fraunces', serif; font-size: 15px; font-weight: 600; color: #fff; letter-spacing: 0.02em; }
+.logo-sub { font-size: 9.5px; color: var(--sidebar-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 1px; }
+
+.nav-section { padding: 18px 0 8px; }
+.nav-section-label {
+  font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.1em;
+  color: var(--sidebar-muted); padding: 0 16px; margin-bottom: 6px;
+  font-family: 'JetBrains Mono', monospace;
+}
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 16px; font-size: 12.5px; font-weight: 500;
+  color: var(--sidebar-text); cursor: pointer; text-decoration: none;
+  transition: background 0.12s; border-left: 2px solid transparent;
+}
+.nav-item svg { width: 15px; height: 15px; flex-shrink: 0; opacity: 0.8; }
+.nav-item:hover { background: rgba(255,255,255,0.05); }
+.nav-item.active { background: rgba(31,122,108,0.18); color: #fff; border-left-color: var(--sidebar-active); font-weight: 600; }
+.nav-item.active svg { opacity: 1; }
+
+.sidebar-divider { height: 1px; background: var(--sidebar-border); margin: 8px 0; }
+
+.sidebar-bottom { margin-top: auto; padding: 14px 16px; border-top: 1px solid var(--sidebar-border); }
+.logout-btn {
+  display: flex; align-items: center; gap: 9px;
+  font-size: 12px; color: var(--sidebar-muted);
+  cursor: pointer; transition: color 0.12s; background: none; border: none;
+  font-family: 'Source Sans 3', sans-serif; width: 100%; text-align: left;
+  padding: 0;
+}
+.logout-btn:hover { color: var(--rust); }
+.logout-btn svg { width: 14px; height: 14px; }
+.sidebar-office { font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(200,216,220,0.3); margin-top: 10px; }
+
+/* ===== MAIN ===== */
+.main { margin-left: 200px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+
+/* ===== TOPBAR ===== */
+.topbar {
+  background: var(--topbar-bg); border-bottom: 1px solid var(--topbar-border);
+  padding: 0 28px; height: 62px; display: flex; align-items: center;
+  justify-content: space-between; flex-shrink: 0;
+  position: sticky; top: 0; z-index: 50;
+}
+.topbar-left .page-title { font-family: 'Fraunces', serif; font-size: 17px; font-weight: 600; color: var(--deep); }
+.topbar-left .page-sub { font-size: 11px; color: var(--muted); margin-top: 1px; }
+.topbar-right { display: flex; align-items: center; gap: 12px; }
+
+
+
+.user-chip {
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 12px; border: 1px solid var(--line);
+  border-radius: 8px; background: var(--body-bg);
+}
+.user-avatar {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--deep); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; font-family: 'Fraunces', serif;
+}
+.user-info .name { font-size: 12.5px; font-weight: 600; color: var(--ink); }
+.user-info .role { font-size: 10.5px; color: var(--muted); }
+
+/* ===== CONTENT ===== */
+.content { padding: 24px 28px 48px; flex: 1; }
+
+/* ===== FILTER BAR ===== */
+.filter-bar {
+  display: flex; gap: 10px; margin-bottom: 20px;
+  flex-wrap: wrap; align-items: flex-end;
+  background: var(--card-bg); padding: 14px 18px;
+  border-radius: 10px; border: 1px solid var(--line);
+}
+.filter-group { display: flex; flex-direction: column; gap: 4px; }
+.filter-group label {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.07em; color: var(--muted);
+  font-family: 'JetBrains Mono', monospace;
+}
+.filter-bar select {
+  padding: 8px 28px 8px 10px; border: 1.5px solid var(--line);
+  border-radius: 7px; font-size: 13px;
+  font-family: 'Source Sans 3', sans-serif;
+  background: #fff; color: var(--ink); cursor: pointer;
+  transition: border-color 0.15s;
+  appearance: none; -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%236b7a79' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat; background-position: right 8px center;
+}
+.filter-bar select:focus { outline: none; border-color: var(--teal); box-shadow: 0 0 0 3px rgba(31,122,108,0.1); }
+.filter-divider { width: 1px; height: 36px; background: var(--line); margin: 0 4px; align-self: flex-end; }
+.filter-spacer { flex: 1; }
+.btn-reset {
+  padding: 8px 14px; background: transparent; color: var(--muted);
+  border: 1.5px solid var(--line); border-radius: 7px;
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: all 0.15s; font-family: 'Source Sans 3', sans-serif;
+}
+.btn-reset:hover { border-color: var(--rust); color: var(--rust); }
+.btn-export {
+  padding: 8px 16px; background: var(--deep); color: #fff;
+  border: none; border-radius: 7px; font-size: 13px;
+  font-weight: 600; cursor: pointer; font-family: 'Source Sans 3', sans-serif;
+}
+.btn-export:hover { background: #0f2530; }
+
+/* Filter chips */
+.filter-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; min-height: 0; }
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 10px; background: var(--teal-soft);
+  color: var(--teal); border-radius: 20px;
+  font-size: 11.5px; font-weight: 600;
+}
+.chip .chip-x { cursor: pointer; opacity: 0.7; font-size: 14px; line-height: 1; }
+.chip .chip-x:hover { opacity: 1; }
+
+/* ===== STAT CARDS ===== */
+.stat-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 14px; margin-bottom: 24px; }
+.stat-card {
+  background: var(--card-bg); border: 1px solid var(--line);
+  border-radius: 12px; padding: 18px; transition: border-color 0.2s;
+}
+.stat-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+.stat-label { font-size: 11px; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+.stat-icon {
+  width: 30px; height: 30px; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--teal-soft);
+}
+.stat-icon svg { width: 15px; height: 15px; }
+.stat-icon.rust { background: var(--rust-soft); }
+.stat-value { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 600; color: var(--deep); margin-bottom: 5px; transition: all 0.3s; }
+.stat-delta { font-size: 11.5px; font-weight: 600; }
+.stat-delta.up { color: var(--teal); }
+.stat-delta.down { color: var(--rust); }
+.stat-delta.neutral { color: var(--muted); }
+.stat-delta span { color: var(--muted); font-weight: 400; }
+
+/* ===== PANELS ===== */
+.panel-grid { display: grid; grid-template-columns: 1.5fr 1fr; gap: 16px; margin-bottom: 16px; }
+.panel { background: var(--card-bg); border: 1px solid var(--line); border-radius: 12px; padding: 20px; }
+.panel-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 16px; }
+.panel-title { font-family: 'Fraunces', serif; font-size: 15px; font-weight: 600; color: var(--deep); }
+.panel-meta { font-size: 11px; color: var(--muted); font-family: 'JetBrains Mono', monospace; }
+
+/* Bar chart */
+.bar-chart { display: flex; align-items: flex-end; gap: 10px; height: 170px; padding-top: 10px; }
+.bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; height: 100%; justify-content: flex-end; }
+.bar { width: 100%; max-width: 44px; border-radius: 5px 5px 0 0; transition: height 0.4s ease; }
+.bar.aqua { background: linear-gradient(180deg, var(--teal), #154a5c); }
+.bar.muni { background: linear-gradient(180deg, #5b7fcc, var(--blue)); }
+.bar.comm { background: #ccc; }
+.bar-val { font-size: 10px; font-family: 'JetBrains Mono', monospace; color: var(--teal); margin-bottom: 5px; font-weight: 500; text-align: center; }
+.bar-lbl { font-size: 10px; color: var(--muted); margin-top: 8px; text-align: center; }
+
+/* Category list */
+.cat-list { display: flex; flex-direction: column; gap: 13px; }
+.cat-row { display: flex; align-items: center; gap: 10px; }
+.cat-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.cat-name { font-size: 13px; flex: 1; }
+.cat-track { flex: 1; max-width: 90px; height: 5px; border-radius: 4px; background: var(--line); overflow: hidden; }
+.cat-fill { height: 100%; border-radius: 4px; transition: width 0.4s ease; }
+.cat-pct { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; color: var(--muted); width: 38px; text-align: right; }
+
+/* Species list */
+.species-list { display: flex; flex-direction: column; gap: 9px; margin-top: 4px; }
+.sp-row { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+.sp-rank { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--muted); width: 18px; }
+.sp-name { flex: 1; color: var(--ink); }
+.sp-val { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--deep); font-weight: 500; }
+
+/* ===== TABLE ===== */
+.table-panel { background: var(--card-bg); border: 1px solid var(--line); border-radius: 12px; padding: 20px; }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; min-width: 600px; }
+th {
+  text-align: left; font-size: 11px; text-transform: uppercase;
+  letter-spacing: 0.05em; color: var(--muted); font-weight: 700;
+  padding: 0 12px 10px; border-bottom: 1.5px solid var(--line);
+  cursor: pointer; white-space: nowrap; user-select: none;
+}
+th:hover { color: var(--deep); }
+th .sort-icon { margin-left: 4px; opacity: 0.35; font-size: 10px; }
+td { padding: 11px 12px; font-size: 13px; border-bottom: 1px solid var(--line); color: var(--ink); }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: rgba(31,122,108,0.03); }
+.tag { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+.tag.aqua { background: var(--teal-soft); color: var(--teal); }
+.tag.muni { background: var(--blue-soft); color: var(--blue); }
+.tag.comm { background: var(--rust-soft); color: var(--rust); }
+.mono { font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+.no-results { text-align: center; padding: 40px; color: var(--muted); font-size: 13.5px; display: none; }
+
+@media (max-width: 1100px) { .stat-grid { grid-template-columns: repeat(2,1fr); } .panel-grid { grid-template-columns: 1fr; } }
+@media (max-width: 760px) { .sidebar { display: none; } .main { margin-left: 0; } .stat-grid { grid-template-columns: 1fr; } }
+</style>
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+
+<body>
+
+<!-- ===== SIDEBAR ===== -->
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-circle">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#1f7a6c" stroke-width="1.8">
+        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+        <circle cx="12" cy="12" r="2.5"/>
+      </svg>
+    </div>
+    <div>
+      <div class="logo-text">BFARPFO</div>
+      <div class="logo-sub">Isabela</div>
+    </div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-section-label">Monitor</div>
+    <a class="nav-item active" href="dashboard.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+      Dashboard
+    </a>
+    <a class="nav-item" href="production-records.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V5a2 2 0 0 1 2-2h8.5L20 7.5V19a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><path d="M9 13h6M9 17h4"/></svg>
+      Production Record
+    </a>
+    <a class="nav-item" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>
+      Analytics
+    </a>
+    <a class="nav-item" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V5a2 2 0 0 1 2-2h8.5L20 7.5V19a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><path d="M14 3v5h5"/></svg>
+      Reports
+    </a>
+  </div>
+
+  <div class="sidebar-divider"></div>
+
+  <div class="nav-section">
+    <div class="nav-section-label">Administration</div>
+    <a class="nav-item" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+      User Account
+    </a>
+    <a class="nav-item" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 8.98 19.4a1.7 1.7 0 0 0-1.87.34l-.06-.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 8.98a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34H9a1.7 1.7 0 0 0 1.03-1.56V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V9a1.7 1.7 0 0 0 1.56 1.03H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1.03Z"/></svg>
+      Settings
+    </a>
+  </div>
+
+  <div class="sidebar-bottom">
+    <button class="logout-btn" onclick="handleLogout()">
+
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Log Out
+    </button>
+    <div class="sidebar-office">Provincial Fisheries Office</div>
+  </div>
+</div>
+
+<!-- ===== MAIN ===== -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="page-title">Production Monitoring Dashboard</div>
+      <div class="page-sub" id="topbar-sub">2026 Isabela Fisheries Production &middot; All data</div>
+    </div>
+    <div class="topbar-right">
+      <div class="user-chip">
+        <div class="user-avatar" id="user-avatar">--</div>
+        <div class="user-info">
+          <div class="name" id="user-name">User</div>
+          <div class="role" id="user-role">Staff</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- Filter bar -->
+    <div class="filter-bar">
+      <div class="filter-group">
+        <label>Month</label>
+        <select id="filter-month" onchange="applyFilters()">
+          <option value="all">All Months</option>
+          <option value="jan">January 2026</option>
+          <option value="feb">February 2026</option>
+        </select>
+      </div>
+      <div class="filter-divider"></div>
+      <div class="filter-group">
+        <label>District</label>
+        <select id="filter-district" onchange="onDistrictChange()">
+          <option value="all">All Districts</option>
+          <option value="1">District 1</option>
+          <option value="2">District 2</option>
+          <option value="3">District 3</option>
+          <option value="4">District 4</option>
+          <option value="5">District 5</option>
+          <option value="6">District 6</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Municipality</label>
+        <select id="filter-muni" onchange="applyFilters()">
+          <option value="all">All Municipalities</option>
+          <option value="City of Ilagan">City of Ilagan</option>
+          <option value="Sta. Maria">Sta. Maria</option>
+          <option value="Gamu">Gamu</option>
+          <option value="San Mateo">San Mateo</option>
+          <option value="Ramon">Ramon</option>
+          <option value="Santiago City">Santiago City</option>
+          <option value="Dinapigue">Dinapigue</option>
+          <option value="Luna">Luna</option>
+          <option value="Quezon">Quezon</option>
+          <option value="Quirino">Quirino</option>
+          <option value="Echague">Echague</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Category</label>
+        <select id="filter-cat" onchange="applyFilters()">
+          <option value="all">All Categories</option>
+          <option value="Aquaculture">Aquaculture</option>
+          <option value="Municipal">Municipal Fisheries</option>
+          <option value="Commercial">Commercial Fisheries</option>
+        </select>
+      </div>
+      <div class="filter-spacer"></div>
+      <button class="btn-reset" onclick="resetFilters()">Reset</button>
+      <button class="btn-export">Generate Report</button>
+    </div>
+
+    <div class="filter-chips" id="filter-chips"></div>
+
+    <!-- Stat cards -->
+    <div class="stat-grid">
+      <div class="stat-card">
+        <div class="stat-top">
+          <div class="stat-label">Total Production</div>
+          <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#1f7a6c" stroke-width="2"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="2.5"/></svg></div>
+        </div>
+        <div class="stat-value" id="stat-total">415,700 kg</div>
+        <div class="stat-delta" id="stat-total-delta"></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-top">
+          <div class="stat-label">Aquaculture</div>
+          <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#1f7a6c" stroke-width="2"><path d="M21 10c0 6-9 12-9 12s-9-6-9-12a9 9 0 1 1 18 0Z"/><circle cx="12" cy="10" r="3"/></svg></div>
+        </div>
+        <div class="stat-value" id="stat-aqua">342,413 kg</div>
+        <div class="stat-delta" id="stat-aqua-delta"></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-top">
+          <div class="stat-label">Municipal Fisheries</div>
+          <div class="stat-icon"><svg viewBox="0 0 24 24" fill="none" stroke="#3b5bab" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg></div>
+        </div>
+        <div class="stat-value" id="stat-muni">73,287 kg</div>
+        <div class="stat-delta" id="stat-muni-delta"></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-top">
+          <div class="stat-label">Commercial Fisheries</div>
+          <div class="stat-icon rust"><svg viewBox="0 0 24 24" fill="none" stroke="#c0573a" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 7v5l3 3"/></svg></div>
+        </div>
+        <div class="stat-value" id="stat-comm">No data</div>
+        <div class="stat-delta neutral" id="stat-comm-delta">Not yet reported for 2026</div>
+      </div>
+    </div>
+
+    <!-- Charts row -->
+    <div class="panel-grid">
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">Production by Category</div>
+          <div class="panel-meta" id="chart-meta">JAN + FEB 2026 &middot; KG</div>
+        </div>
+        <div class="bar-chart" id="bar-chart"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">Category Breakdown</div>
+          <div class="panel-meta" id="cat-meta">ALL MONTHS</div>
+        </div>
+        <div class="cat-list" id="cat-list"></div>
+        <div style="margin-top:20px;border-top:1px solid var(--line);padding-top:16px;">
+          <div class="panel-head" style="margin-bottom:10px;">
+            <div class="panel-title" style="font-size:14px;">Top Species (Municipal)</div>
+          </div>
+          <div class="species-list" id="species-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Records table -->
+    <div class="table-panel">
+      <div class="panel-head">
+        <div class="panel-title">Production Records</div>
+        <div class="panel-meta" id="table-meta">SHOWING ALL RECORDS</div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th onclick="sortTable('district')">District <span class="sort-icon">&#8597;</span></th>
+              <th onclick="sortTable('muni')">Municipality <span class="sort-icon">&#8597;</span></th>
+              <th onclick="sortTable('month')">Month <span class="sort-icon">&#8597;</span></th>
+              <th onclick="sortTable('category')">Category <span class="sort-icon">&#8597;</span></th>
+              <th>Farm / Sector</th>
+              <th onclick="sortTable('species')">Species <span class="sort-icon">&#8597;</span></th>
+              <th onclick="sortTable('production')" style="text-align:right;">Production (kg) <span class="sort-icon">&#8597;</span></th>
+            </tr>
+          </thead>
+          <tbody id="table-body"></tbody>
+        </table>
+        <div class="no-results" id="no-results">No records match the selected filters.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// =====================================================
+// SUPABASE INIT
+// =====================================================
+const { createClient } = supabase;
+const sb = createClient('https://wwvcytjqrxkuzgylujqa.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind3dmN5dGpxcnhrdXpneWx1anFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM4NDg0NDksImV4cCI6MjA5OTQyNDQ0OX0.YXtkYrFrwBJljdVlZWEKy5lZsHs-KcwdjwGZVMRXzrE');
+
+// =====================================================
+// USER DISPLAY HELPERS
+// =====================================================
+function updateUserDisplay(user) {
+  const email = user.email || '';
+  const username = email.split('@')[0];
+  const initials = username.slice(0, 2).toUpperCase();
+
+  const avatarEl = document.getElementById('user-avatar');
+  const nameEl = document.getElementById('user-name');
+  const roleEl = document.getElementById('user-role');
+
+  if (avatarEl) avatarEl.textContent = initials;
+  if (nameEl) nameEl.textContent = username;
+  if (roleEl) roleEl.textContent = user.user_metadata?.role || 'Staff';
+}
+
+// =====================================================
+// SESSION CHECK — Supabase native (no PHP needed)
+// =====================================================
+(async function checkSession() {
+  const { data: { session }, error } = await sb.auth.getSession();
+  if (!session) {
+    window.location.href = 'index.html';
+    return;
+  }
+  updateUserDisplay(session.user);
+  renderAll();
+})();
+
+async function handleLogout() {
+  await sb.auth.signOut();
+  window.location.href = 'index.html';
+}
+
+
+// Canonical district -> municipality map (source of truth)
+const DISTRICTS = { "1": ["City of Ilagan", "Cabagan", "Delfin Albano", "Divilacan", "Maconacon","San Pablo", "Santa Maria", "Santo Tomas","Tumauini"], "2": ["Benito Soliven", "Gamu", "Naguilian", "Palanan", "Reina Mercedes", "San Mariano"], "3": ["Alicia", "Angadanan", "Cabatuan", "Ramon", "San Mateo"], "4": ["Santiago","Cordon","Dinapigue","Jones", "San Agustin"], "5": ["Aurora", "Burgos", "Luna", "Mallig", "Quezon", "Quirino", "Roxas", "San Manuel"], "6": ["Cauayan", "Echague", "San Guillermo", "San Isidro"] };
+
+// The dataset uses a couple of shorthand spellings ("Sta. Maria", "Santiago City")
+// that don't match the canonical names above 1:1 — map those explicitly.
+const MUNI_ALIASES = { "Sta. Maria": "Santa Maria", "Santiago City": "Santiago" };
+
+// Build a reverse lookup (municipality -> district) from the canonical map
+const MUNI_TO_DISTRICT = {};
+Object.entries(DISTRICTS).forEach(([dist, munis]) => {
+  munis.forEach(m => { MUNI_TO_DISTRICT[m] = dist; });
+});
+
+// Correct every record's district against the canonical source, so filtering
+// is always right even if a record was entered with the wrong district.
+ALL_RECORDS.forEach(r => {
+  const canonicalName = MUNI_ALIASES[r.muni] || r.muni;
+  const correctDistrict = MUNI_TO_DISTRICT[canonicalName];
+  if (correctDistrict) r.district = correctDistrict;
+});
+
+let currentSort = {col:'production', dir:'desc'};
+let filtered = [...ALL_RECORDS];
+
+function applyFilters() {
+  const month = document.getElementById('filter-month').value;
+  const district = document.getElementById('filter-district').value;
+  const muni = document.getElementById('filter-muni').value;
+  const cat = document.getElementById('filter-cat').value;
+  filtered = ALL_RECORDS.filter(r => {
+    if (month !== 'all' && r.month !== month) return false;
+    if (district !== 'all' && r.district !== district) return false;
+    if (muni !== 'all' && r.muni !== muni) return false;
+    if (cat !== 'all' && r.category !== cat) return false;
+    return true;
+  });
+  renderAll();
+}
+
+// Keep the Municipality dropdown scoped to whichever District is selected,
+// so it's impossible to pick a District/Municipality combo that can't match.
+function onDistrictChange() {
+  const district = document.getElementById('filter-district').value;
+  const muniSelect = document.getElementById('filter-muni');
+  const previousValue = muniSelect.value;
+
+  const availableMunis = district === 'all'
+    ? [...new Set(ALL_RECORDS.map(r => r.muni))].sort()
+    : [...new Set(ALL_RECORDS.filter(r => r.district === district).map(r => r.muni))].sort();
+
+  muniSelect.innerHTML = '<option value="all">All Municipalities</option>' +
+    availableMunis.map(m => `<option value="${m}">${m}</option>`).join('');
+
+  // Preserve the previous selection only if it's still valid for this district
+  muniSelect.value = availableMunis.includes(previousValue) ? previousValue : 'all';
+
+  applyFilters();
+}
+
+function resetFilters() {
+  document.getElementById('filter-month').value = 'all';
+  document.getElementById('filter-district').value = 'all';
+  onDistrictChange(); // rebuilds the municipality list back to "All" and calls applyFilters
+  document.getElementById('filter-cat').value = 'all';
+  filtered = [...ALL_RECORDS];
+  renderAll();
+}
+
+function sortTable(col) {
+  if (currentSort.col === col) currentSort.dir = currentSort.dir === 'asc' ? 'desc' : 'asc';
+  else { currentSort.col = col; currentSort.dir = col === 'production' ? 'desc' : 'asc'; }
+  renderTable();
+}
+
+function getSorted() {
+  return [...filtered].sort((a,b) => {
+    let va = a[currentSort.col] || '', vb = b[currentSort.col] || '';
+    if (typeof va === 'number') return currentSort.dir === 'asc' ? va-vb : vb-va;
+    return currentSort.dir === 'asc' ? String(va).localeCompare(String(vb)) : String(vb).localeCompare(String(va));
+  });
+}
+
+function fmt(n) { return n ? n.toLocaleString('en-US', {maximumFractionDigits:0}) : '0'; }
+
+function renderAll() {
+  renderChips();
+  renderStats();
+  renderBarChart();
+  renderCategoryBreakdown();
+  renderSpecies();
+  renderTable();
+  updateTopbarSub();
+}
+
+function updateTopbarSub() {
+  const month = document.getElementById('filter-month').value;
+  const muni = document.getElementById('filter-muni').value;
+  const cat = document.getElementById('filter-cat').value;
+  let parts = ['2026 Isabela'];
+  if (month !== 'all') parts.push(month === 'jan' ? 'January' : 'February');
+  if (muni !== 'all') parts.push(muni);
+  if (cat !== 'all') parts.push(cat);
+  document.getElementById('topbar-sub').textContent = parts.join(' \u00b7 ') + ' Fisheries Production';
+}
+
+function renderChips() {
+  const chips = document.getElementById('filter-chips');
+  chips.innerHTML = '';
+  const labels = {
+    'filter-month': {jan:'January 2026', feb:'February 2026'},
+    'filter-district': {1:'District 1',2:'District 2',3:'District 3',4:'District 4',5:'District 5',6:'District 6'},
+    'filter-muni': null,
+    'filter-cat': {Aquaculture:'Aquaculture',Municipal:'Municipal Fisheries',Commercial:'Commercial Fisheries'}
+  };
+  ['filter-month','filter-district','filter-muni','filter-cat'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (sel.value !== 'all') {
+      const label = labels[id] ? (labels[id][sel.value] || sel.value) : sel.value;
+      const chip = document.createElement('div');
+      chip.className = 'chip';
+      chip.innerHTML = label + ' <span class="chip-x" onclick="clearFilter(\'' + id + '\')">&#x2715;</span>';
+      chips.appendChild(chip);
+    }
+  });
+}
+
+function clearFilter(id) {
+  document.getElementById(id).value = 'all';
+  if (id === 'filter-district') onDistrictChange();
+  else applyFilters();
+}
+
+function renderStats() {
+  const aqua = filtered.filter(r => r.category === 'Aquaculture').reduce((s,r) => s+r.production,0);
+  const muni = filtered.filter(r => r.category === 'Municipal').reduce((s,r) => s+r.production,0);
+  const comm = filtered.filter(r => r.category === 'Commercial').reduce((s,r) => s+r.production,0);
+  const total = aqua + muni + comm;
+  document.getElementById('stat-total').textContent = fmt(total) + ' kg';
+  document.getElementById('stat-aqua').textContent = aqua > 0 ? fmt(aqua) + ' kg' : 'No data';
+  document.getElementById('stat-muni').textContent = muni > 0 ? fmt(muni) + ' kg' : 'No data';
+  document.getElementById('stat-comm').textContent = comm > 0 ? fmt(comm) + ' kg' : 'No data';
+  const month = document.getElementById('filter-month').value;
+  document.getElementById('stat-total-delta').innerHTML = month === 'all' ? '<span>Jan + Feb combined</span>' : '';
+  document.getElementById('stat-aqua-delta').innerHTML = month === 'all' ? '<span>Jan + Feb combined</span>' : '';
+  document.getElementById('stat-muni-delta').innerHTML = month === 'all' ? '<span>Jan + Feb combined</span>' : '';
+}
+
+function renderBarChart() {
+  const chart = document.getElementById('bar-chart');
+  const month = document.getElementById('filter-month').value;
+  let bars = [];
+  if (month === 'all' || month === 'jan') {
+    const aquaJan = filtered.filter(r => r.category === 'Aquaculture' && r.month === 'jan').reduce((s,r) => s+r.production,0);
+    const muniJan = filtered.filter(r => r.category === 'Municipal' && r.month === 'jan').reduce((s,r) => s+r.production,0);
+    if (aquaJan > 0) bars.push({label:'Aqua. Jan', val:aquaJan, cls:'aqua'});
+    if (muniJan > 0) bars.push({label:'Mun. Jan', val:muniJan, cls:'muni'});
+  }
+  if (month === 'all' || month === 'feb') {
+    const aquaFeb = filtered.filter(r => r.category === 'Aquaculture' && r.month === 'feb').reduce((s,r) => s+r.production,0);
+    const muniFeb = filtered.filter(r => r.category === 'Municipal' && r.month === 'feb').reduce((s,r) => s+r.production,0);
+    if (aquaFeb > 0) bars.push({label:'Aqua. Feb', val:aquaFeb, cls:'aqua'});
+    if (muniFeb > 0) bars.push({label:'Mun. Feb', val:muniFeb, cls:'muni'});
+  }
+  if (!bars.length) { chart.innerHTML = '<div style="text-align:center;padding:48px;color:var(--muted);font-size:13px;">No data for selected filters.</div>'; return; }
+  const maxVal = Math.max(...bars.map(b => b.val));
+  const metaMonths = month === 'jan' ? 'JAN 2026' : month === 'feb' ? 'FEB 2026' : 'JAN + FEB 2026';
+  document.getElementById('chart-meta').textContent = metaMonths + ' \u00b7 KG';
+  chart.innerHTML = bars.map(b => {
+    const pct = maxVal > 0 ? Math.max((b.val/maxVal)*100, 2) : 2;
+    const display = b.val >= 1000 ? (b.val/1000).toFixed(0)+'k' : fmt(b.val);
+    return `<div class="bar-col"><div class="bar-val">${display}</div><div class="bar ${b.cls}" style="height:${pct}%"></div><div class="bar-lbl">${b.label}</div></div>`;
+  }).join('');
+}
+
+function renderCategoryBreakdown() {
+  const aqua = filtered.filter(r => r.category === 'Aquaculture').reduce((s,r) => s+r.production,0);
+  const muni = filtered.filter(r => r.category === 'Municipal').reduce((s,r) => s+r.production,0);
+  const comm = filtered.filter(r => r.category === 'Commercial').reduce((s,r) => s+r.production,0);
+  const total = aqua + muni + comm;
+  const month = document.getElementById('filter-month').value;
+  document.getElementById('cat-meta').textContent = month === 'jan' ? 'JANUARY' : month === 'feb' ? 'FEBRUARY' : 'ALL MONTHS';
+  const pct = v => total > 0 ? ((v/total)*100).toFixed(1) : '0';
+  document.getElementById('cat-list').innerHTML = `
+    <div class="cat-row"><span class="cat-dot" style="background:#1f7a6c;"></span><span class="cat-name">Aquaculture</span><div class="cat-track"><div class="cat-fill" style="width:${pct(aqua)}%;background:#1f7a6c;"></div></div><span class="cat-pct">${pct(aqua)}%</span></div>
+    <div class="cat-row"><span class="cat-dot" style="background:#3b5bab;"></span><span class="cat-name">Municipal</span><div class="cat-track"><div class="cat-fill" style="width:${pct(muni)}%;background:#3b5bab;"></div></div><span class="cat-pct">${pct(muni)}%</span></div>
+    <div class="cat-row"><span class="cat-dot" style="background:#ccc;"></span><span class="cat-name">Commercial</span><div class="cat-track"><div class="cat-fill" style="width:${pct(comm)}%;background:#ccc;"></div></div><span class="cat-pct">${pct(comm)}%</span></div>`;
+}
+
+function renderSpecies() {
+  const totals = {};
+  filtered.filter(r => r.category === 'Municipal').forEach(r => { totals[r.species] = (totals[r.species]||0) + r.production; });
+  const sorted = Object.entries(totals).sort((a,b) => b[1]-a[1]).slice(0,5);
+  if (!sorted.length) { document.getElementById('species-list').innerHTML = '<div style="font-size:13px;color:var(--muted);padding:8px 0;">No municipal data for this selection.</div>'; return; }
+  document.getElementById('species-list').innerHTML = sorted.map(([sp,val],i) =>
+    `<div class="sp-row"><span class="sp-rank">${String(i+1).padStart(2,'0')}</span><span class="sp-name">${sp}</span><span class="sp-val">${fmt(val)} kg</span></div>`
+  ).join('');
+}
+
+function renderTable() {
+  const tbody = document.getElementById('table-body');
+  const noResults = document.getElementById('no-results');
+  const meta = document.getElementById('table-meta');
+  const rows = getSorted();
+  if (!rows.length) { tbody.innerHTML = ''; noResults.style.display = 'block'; meta.textContent = '0 RECORDS'; return; }
+  noResults.style.display = 'none';
+  meta.textContent = `SHOWING ${rows.length} RECORD${rows.length !== 1 ? 'S' : ''}`;
+  const catClass = {Aquaculture:'aqua', Municipal:'muni', Commercial:'comm'};
+  tbody.innerHTML = rows.map(r => `
+    <tr>
+      <td class="mono">${r.district}</td>
+      <td>${r.muni}</td>
+      <td class="mono">${r.month === 'jan' ? 'Jan 2026' : 'Feb 2026'}</td>
+      <td><span class="tag ${catClass[r.category]||''}">${r.category}</span></td>
+      <td style="font-size:12px;color:var(--muted)">${r.farm}</td>
+      <td>${r.species}</td>
+      <td class="mono" style="text-align:right">${fmt(r.production)}</td>
+    </tr>`).join('');
+}
+
+</script>
+</body>
+</html>

@@ -1,0 +1,1519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Production Records | BFARPFO</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Source+Sans+3:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --sidebar-bg: #1a3a4a;
+  --sidebar-active: #1f7a6c;
+  --sidebar-text: #c8d8dc;
+  --sidebar-muted: rgba(200,216,220,0.5);
+  --sidebar-border: rgba(200,216,220,0.12);
+  --topbar-bg: #ffffff;
+  --topbar-border: #e4e8e8;
+  --body-bg: #f0ebe0;
+  --card-bg: #ffffff;
+  --ink: #0c1f24;
+  --muted: #6b7a79;
+  --line: rgba(12,31,36,0.1);
+  --teal: #1f7a6c;
+  --teal-soft: rgba(31,122,108,0.1);
+  --deep: #1a3a4a;
+  --rust: #c0573a;
+  --rust-soft: rgba(192,87,58,0.1);
+  --blue: #3b5bab;
+  --blue-soft: rgba(59,91,171,0.1);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Source Sans 3', sans-serif; background: var(--body-bg); color: var(--ink); min-height: 100vh; display: flex; font-size: 14px; }
+
+/* ========== SIDEBAR ========== */
+.sidebar {
+  width: 210px;
+  background: var(--sidebar-bg);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  z-index: 100;
+}
+.sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 16px;
+  border-bottom: 1px solid var(--sidebar-border);
+}
+.logo-circle {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  border: 2px solid var(--sidebar-active);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.logo-circle svg { width: 20px; height: 20px; }
+.logo-text {
+  font-family: 'Fraunces', serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: 0.02em;
+}
+.logo-sub {
+  font-size: 9.5px;
+  color: var(--sidebar-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 1px;
+}
+
+.nav-section { padding: 18px 0 8px; }
+.nav-section-label {
+  font-size: 9.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--sidebar-muted);
+  padding: 0 16px;
+  margin-bottom: 6px;
+  font-family: 'JetBrains Mono', monospace;
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 16px;
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--sidebar-text);
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.12s;
+  border-left: 2px solid transparent;
+}
+.nav-item svg { width: 15px; height: 15px; flex-shrink: 0; opacity: 0.8; }
+.nav-item:hover { background: var(--sidebar-hover); color: #fff; }
+.nav-item.active {
+  background: rgba(31,122,108,0.18);
+  color: #fff;
+  border-left-color: var(--sidebar-active);
+  font-weight: 600;
+}
+.nav-item.active svg { opacity: 1; }
+
+.sidebar-divider { height: 1px; background: var(--sidebar-border); margin: 8px 0; }
+
+.sidebar-bottom {
+  margin-top: auto;
+  padding: 14px 16px;
+  border-top: 1px solid var(--sidebar-border);
+}
+.logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 12px;
+  color: var(--sidebar-muted);
+  cursor: pointer;
+  transition: color 0.12s;
+}
+.logout-btn:hover { color: #e87461; }
+.logout-btn svg { width: 14px; height: 14px; }
+.sidebar-office {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(200,216,220,0.3);
+  margin-top: 10px;
+}
+
+/* ========== MAIN ========== */
+.main { margin-left: 210px; flex: 1; display: flex; flex-direction: column; min-height: 100vh; }
+
+/* ========== TOPBAR ========== */
+.topbar {
+  background: var(--topbar-bg);
+  border-bottom: 1px solid var(--topbar-border);
+  padding: 0 28px;
+  height: 62px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+.topbar-left .page-title {
+  font-family: 'Fraunces', serif;
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--deep);
+}
+.topbar-left .page-sub {
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 1px;
+}
+.user-chip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--body-bg);
+}
+.user-avatar {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: var(--deep);
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700;
+  font-family: 'Fraunces', serif;
+}
+.user-info .name { font-size: 12.5px; font-weight: 600; color: var(--ink); }
+.user-info .role { font-size: 10.5px; color: var(--muted); }
+
+/* ========== CONTENT AREA ========== */
+.content { padding: 24px 28px 48px; flex: 1; }
+
+/* ========== PAGE HEADER ========== */
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+.page-header-text h1 {
+  font-family: 'Fraunces', serif;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--deep);
+  margin-bottom: 4px;
+}
+.page-header-text p {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+/* ========== STEP INDICATOR ========== */
+.steps {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 28px;
+  background: var(--card-bg);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.step {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  border-right: 1px solid var(--line);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.step:last-child { border-right: none; }
+.step-num {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  border: 1.5px solid var(--line);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+  flex-shrink: 0;
+  transition: all 0.2s;
+}
+.step-text .step-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; font-family: 'JetBrains Mono', monospace; }
+.step-text .step-name { font-size: 13px; font-weight: 600; color: var(--muted); margin-top: 1px; }
+.step.active .step-num { background: var(--teal); border-color: var(--teal); color: #fff; }
+.step.active .step-text .step-label { color: var(--teal); }
+.step.active .step-text .step-name { color: var(--ink); }
+.step.done .step-num { background: var(--teal-soft); border-color: var(--teal); color: var(--teal); }
+.step.done .step-text .step-name { color: var(--muted); }
+
+/* ========== FORM CARD ========== */
+.form-card {
+  background: var(--card-bg);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.form-card-header {
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.form-card-header h2 {
+  font-family: 'Fraunces', serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--deep);
+}
+.form-card-header p { font-size: 12.5px; color: var(--muted); margin-top: 2px; }
+.form-card-body { padding: 24px; }
+
+/* ========== FORM FIELDS ========== */
+.field-row {
+  display: grid;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.field-row.cols-2 { grid-template-columns: 1fr 1fr; }
+.field-row.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+.field-row.cols-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+.field-row.cols-1 { grid-template-columns: 1fr; }
+
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label {
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--deep);
+}
+.field label .required { color: var(--rust); margin-left: 2px; }
+.field select,
+.field input[type="number"],
+.field input[type="text"] {
+  padding: 10px 12px;
+  border: 1.5px solid var(--line);
+  border-radius: 7px;
+  font-size: 13.5px;
+  font-family: 'Source Sans 3', sans-serif;
+  background: #fff;
+  color: var(--ink);
+  transition: border-color 0.15s, box-shadow 0.15s;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7a79' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 32px;
+}
+.field input[type="number"],
+.field input[type="text"] {
+  background-image: none;
+  padding-right: 12px;
+}
+.field select:focus,
+.field input:focus {
+  outline: none;
+  border-color: var(--teal);
+  box-shadow: 0 0 0 3px rgba(31,122,108,0.1);
+}
+.field select:disabled { background-color: #f5f5f5; color: var(--muted); cursor: not-allowed; }
+.field .hint { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+/* ========== CATEGORY SELECTOR ========== */
+.cat-selector {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.cat-option {
+  border: 2px solid var(--line);
+  border-radius: 10px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.15s;
+  text-align: center;
+  background: #fff;
+}
+.cat-option:hover { border-color: var(--teal); background: var(--teal-soft); }
+.cat-option.selected { border-color: var(--teal); background: var(--teal-soft); }
+.cat-option.selected.muni-sel { border-color: var(--blue); background: var(--blue-soft); }
+.cat-option.selected.comm-sel { border-color: var(--rust); background: var(--rust-soft); }
+.cat-option .cat-icon { font-size: 22px; margin-bottom: 8px; }
+.cat-option .cat-name { font-size: 13px; font-weight: 700; color: var(--ink); }
+.cat-option .cat-desc { font-size: 11px; color: var(--muted); margin-top: 3px; line-height: 1.4; }
+.cat-option.selected .cat-name { color: var(--teal); }
+.cat-option.selected.muni-sel .cat-name { color: var(--blue); }
+.cat-option.selected.comm-sel .cat-name { color: var(--rust); }
+
+/* ========== DYNAMIC FORM SECTIONS ========== */
+.form-section { display: none; }
+.form-section.visible { display: block; }
+
+.section-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+.section-badge.aqua { background: var(--teal-soft); color: var(--teal); }
+.section-badge.muni { background: var(--blue-soft); color: var(--blue); }
+.section-badge.comm { background: var(--rust-soft); color: var(--rust); }
+.section-badge .dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+
+/* ========== MULTI-SPECIES TABLE ========== */
+.species-table {
+  border: 1.5px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+.species-table-head {
+  display: grid;
+  gap: 0;
+  background: var(--body-bg);
+  border-bottom: 1.5px solid var(--line);
+  padding: 10px 14px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+}
+.species-table-head.aqua-head { grid-template-columns: 2fr 1.5fr 1.5fr 40px; }
+.species-table-head.muni-head { grid-template-columns: 2fr 1.5fr 40px; }
+.species-table-head.comm-head { grid-template-columns: 2fr 1.5fr 40px; }
+
+.species-row {
+  display: grid;
+  gap: 10px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--line);
+  align-items: center;
+  background: #fff;
+}
+.species-row:last-child { border-bottom: none; }
+.species-row.aqua-row { grid-template-columns: 2fr 1.5fr 1.5fr 40px; }
+.species-row.muni-row { grid-template-columns: 2fr 1.5fr 40px; }
+.species-row.comm-row { grid-template-columns: 2fr 1.5fr 40px; }
+
+.species-row select,
+.species-row input {
+  padding: 8px 10px;
+  border: 1.5px solid var(--line);
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: 'Source Sans 3', sans-serif;
+  background: #fff;
+  color: var(--ink);
+  width: 100%;
+  transition: border-color 0.15s;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%236b7a79' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  padding-right: 26px;
+}
+.species-row input {
+  background-image: none;
+  padding-right: 10px;
+}
+.species-row select:focus,
+.species-row input:focus {
+  outline: none;
+  border-color: var(--teal);
+  box-shadow: 0 0 0 2px rgba(31,122,108,0.1);
+}
+.remove-row-btn {
+  width: 30px; height: 30px;
+  display: flex; align-items: center; justify-content: center;
+  border: 1.5px solid var(--line);
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--muted);
+  background: #fff;
+  transition: all 0.12s;
+  font-size: 16px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.remove-row-btn:hover { border-color: var(--rust); color: var(--rust); background: var(--rust-soft); }
+
+.add-species-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border: 1.5px dashed var(--line);
+  border-radius: 7px;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: 'Source Sans 3', sans-serif;
+  width: 100%;
+  justify-content: center;
+}
+.add-species-btn:hover { border-color: var(--teal); color: var(--teal); background: var(--teal-soft); }
+.add-species-btn svg { width: 14px; height: 14px; }
+
+/* ========== SECTION DIVIDER ========== */
+.form-divider {
+  height: 1px;
+  background: var(--line);
+  margin: 24px 0;
+}
+
+/* ========== ACTION BUTTONS ========== */
+.form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px;
+  border-top: 1px solid var(--line);
+  background: var(--body-bg);
+}
+.btn {
+  padding: 10px 20px;
+  border-radius: 7px;
+  font-size: 13.5px;
+  font-weight: 600;
+  font-family: 'Source Sans 3', sans-serif;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: 1.5px solid transparent;
+}
+.btn-primary { background: var(--deep); color: #fff; }
+.btn-primary:hover { background: #0f2530; }
+.btn-secondary { background: transparent; color: var(--muted); border-color: var(--line); }
+.btn-secondary:hover { border-color: var(--muted); color: var(--ink); }
+.btn-ghost { background: transparent; color: var(--teal); }
+.btn-ghost:hover { background: var(--teal-soft); }
+.btn-actions { display: flex; gap: 10px; }
+
+/* ========== TOAST / ALERT ========== */
+.toast {
+  position: fixed;
+  bottom: 28px;
+  right: 28px;
+  background: var(--deep);
+  color: #fff;
+  padding: 14px 20px;
+  border-radius: 10px;
+  font-size: 13.5px;
+  font-weight: 600;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  transform: translateY(80px);
+  opacity: 0;
+  transition: all 0.3s ease;
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 360px;
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+.toast.success { background: var(--teal); }
+.toast.error { background: var(--rust); }
+.toast svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+/* ========== ENTRIES LOG ========== */
+.entries-panel {
+  margin-top: 24px;
+  background: var(--card-bg);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.entries-header {
+  padding: 16px 24px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.entries-header h3 {
+  font-family: 'Fraunces', serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--deep);
+}
+.entries-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+.entries-table { width: 100%; border-collapse: collapse; }
+.entries-table th {
+  text-align: left;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  font-weight: 700;
+  padding: 10px 16px;
+  border-bottom: 1.5px solid var(--line);
+  background: var(--body-bg);
+}
+.entries-table td {
+  padding: 11px 16px;
+  font-size: 13px;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+}
+.entries-table tr:last-child td { border-bottom: none; }
+.entries-table tr:hover td { background: rgba(31,122,108,0.04); }
+.tag {
+  display: inline-block;
+  padding: 2px 9px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.tag.aqua { background: var(--teal-soft); color: var(--teal); }
+.tag.muni { background: var(--blue-soft); color: var(--blue); }
+.tag.comm { background: var(--rust-soft); color: var(--rust); }
+.mono { font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+.empty-entries {
+  text-align: center;
+  padding: 40px;
+  color: var(--muted);
+  font-size: 13.5px;
+}
+.empty-entries svg { width: 32px; height: 32px; opacity: 0.3; margin-bottom: 10px; }
+.delete-entry {
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 15px;
+  transition: color 0.12s;
+}
+.delete-entry:hover { color: var(--rust); }
+
+/* ========== VALIDATION ========== */
+.field-error { border-color: var(--rust) !important; }
+.error-msg { font-size: 11px; color: var(--rust); margin-top: 3px; }
+
+@media (max-width: 900px) {
+  .sidebar { display: none; }
+  .main { margin-left: 0; }
+  .field-row.cols-4 { grid-template-columns: 1fr 1fr; }
+  .field-row.cols-3 { grid-template-columns: 1fr 1fr; }
+  .cat-selector { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<!-- ===== SIDEBAR ===== -->
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-circle">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#1f7a6c" stroke-width="1.8">
+        <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/>
+        <circle cx="12" cy="12" r="2.5"/>
+      </svg>
+    </div>
+    <div>
+      <div class="logo-text">BFARPFO</div>
+      <div class="logo-sub">Isabela</div>
+    </div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-section-label">Monitor</div>
+    <a class="nav-item" href="dashboard.html">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+      Dashboard
+    </a>
+    <a class="nav-item active" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V5a2 2 0 0 1 2-2h8.5L20 7.5V19a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><path d="M9 13h6M9 17h4"/></svg>
+      Production Record
+    </a>
+    <a class="nav-item" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>
+      Analytics
+    </a>
+    <a class="nav-item" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V5a2 2 0 0 1 2-2h8.5L20 7.5V19a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><path d="M14 3v5h5"/></svg>
+      Reports
+    </a>
+  </div>
+
+  <div class="sidebar-divider"></div>
+
+  <div class="nav-section">
+    <div class="nav-section-label">Administration</div>
+    <a class="nav-item" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+      User Account
+    </a>
+    <a class="nav-item" href="#">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.03 1.56V21a2 2 0 1 1-4 0v-.09A1.7 1.7 0 0 0 8.98 19.4a1.7 1.7 0 0 0-1.87.34l-.06-.06a2 2 0 1 1-2.83-2.83l.06-.06a1.7 1.7 0 0 0 .34-1.87 1.7 1.7 0 0 0-1.56-1.03H3a2 2 0 1 1 0-4h.09A1.7 1.7 0 0 0 4.6 8.98a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.7 1.7 0 0 0 1.87.34H9a1.7 1.7 0 0 0 1.03-1.56V3a2 2 0 1 1 4 0v.09a1.7 1.7 0 0 0 1.03 1.56 1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.7 1.7 0 0 0-.34 1.87V9a1.7 1.7 0 0 0 1.56 1.03H21a2 2 0 1 1 0 4h-.09a1.7 1.7 0 0 0-1.51 1.03Z"/></svg>
+      Settings
+    </a>
+  </div>
+
+  <div class="sidebar-bottom">
+    <button class="logout-btn" onclick="handleLogout()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Log Out
+    </button>
+    <div class="sidebar-office">Provincial Fisheries Office</div>
+  </div>
+</div>
+
+<!-- ===== MAIN ===== -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="page-title">Production Records</div>
+      <div class="page-sub">Real-time Production Monitoring and Information Management System</div>
+    </div>
+    <div class="user-chip">
+      <div class="user-avatar" id="user-avatar">--</div>
+      <div class="user-info">
+        <div class="name" id="user-name">User</div>
+        <div class="role" id="user-role">Staff</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <div class="page-header">
+      <div class="page-header-text">
+        <h1>Add Production Entry</h1>
+        <p>Select the reporting period and location first, then choose the fisheries category to fill in the production details.</p>
+      </div>
+    </div>
+
+    <!-- Step indicator -->
+    <div class="steps">
+      <div class="step active" id="step-1">
+        <div class="step-num">1</div>
+        <div class="step-text">
+          <div class="step-label">Step 1</div>
+          <div class="step-name">Period &amp; Location</div>
+        </div>
+      </div>
+      <div class="step" id="step-2">
+        <div class="step-num">2</div>
+        <div class="step-text">
+          <div class="step-label">Step 2</div>
+          <div class="step-name">Category</div>
+        </div>
+      </div>
+      <div class="step" id="step-3">
+        <div class="step-num">3</div>
+        <div class="step-text">
+          <div class="step-label">Step 3</div>
+          <div class="step-name">Production Details</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FORM CARD -->
+    <div class="form-card">
+      <div class="form-card-header">
+        <div>
+          <h2 id="form-card-title">Step 1: Reporting Period and Location</h2>
+          <p id="form-card-desc">Select the month, district, and municipality before proceeding.</p>
+        </div>
+      </div>
+      <div class="form-card-body">
+
+        <!-- STEP 1: Period + Location -->
+        <div id="section-step1">
+          <div class="field-row cols-4">
+            <div class="field">
+              <label>Month <span class="required">*</span></label>
+              <select id="sel-month">
+                <option value="">Select month</option>
+                <option value="January">January 2026</option>
+                <option value="February">February 2026</option>
+                <option value="March">March 2026</option>
+                <option value="April">April 2026</option>
+                <option value="May">May 2026</option>
+                <option value="June">June 2026</option>
+                <option value="July">July 2026</option>
+                <option value="August">August 2026</option>
+                <option value="September">September 2026</option>
+                <option value="October">October 2026</option>
+                <option value="November">November 2026</option>
+                <option value="December">December 2026</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>District <span class="required">*</span></label>
+              <select id="sel-district" onchange="updateMuniOptions()">
+                <option value="">Select district</option>
+                <option value="1">District 1</option>
+                <option value="2">District 2</option>
+                <option value="3">District 3</option>
+                <option value="4">District 4</option>
+                <option value="5">District 5</option>
+                <option value="6">District 6</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Municipality <span class="required">*</span></label>
+              <select id="sel-muni" disabled>
+                <option value="">Select district first</option>
+              </select>
+            </div>
+          </div>
+          <div style="display:flex; justify-content:flex-end; margin-top:8px;">
+            <button class="btn btn-primary" onclick="goStep2()">Next: Select Category</button>
+          </div>
+        </div>
+
+        <!-- STEP 2: Category -->
+        <div id="section-step2" style="display:none;">
+          <p style="font-size:13px; color:var(--muted); margin-bottom:18px;">Choose the fisheries category for this entry. Each category has different data requirements.</p>
+          <div class="cat-selector">
+            <div class="cat-option" id="cat-aqua" onclick="selectCategory('Aquaculture')">
+              <div class="cat-icon">🐟</div>
+              <div class="cat-name">Aquaculture</div>
+              <div class="cat-desc">Fishpond, SWIP/Dams, and other fish farm operations</div>
+            </div>
+            <div class="cat-option" id="cat-muni" onclick="selectCategory('Municipal')">
+              <div class="cat-icon">🎣</div>
+              <div class="cat-name">Municipal Fisheries</div>
+              <div class="cat-desc">Inland municipal and marine municipal fishing sectors</div>
+            </div>
+            <div class="cat-option" id="cat-comm" onclick="selectCategory('Commercial')">
+              <div class="cat-icon">🚢</div>
+              <div class="cat-name">Commercial Fisheries</div>
+              <div class="cat-desc">Commercial fishing operations and vessels</div>
+            </div>
+          </div>
+          <div style="display:flex; justify-content:space-between; margin-top:8px;">
+            <button class="btn btn-secondary" onclick="goStep1()">Back</button>
+            <button class="btn btn-primary" onclick="goStep3()" id="btn-next-step3" disabled>Next: Production Details</button>
+          </div>
+        </div>
+
+        <!-- STEP 3a: AQUACULTURE -->
+        <div id="section-aqua" class="form-section">
+          <div class="section-badge aqua"><span class="dot"></span>Aquaculture Entry</div>
+
+          <div class="field-row cols-2" style="margin-bottom:16px;">
+            <div class="field">
+              <label>Aquafarm Type <span class="required">*</span></label>
+              <select id="aqua-farm">
+                <option value="">Select aquafarm type</option>
+                <option value="Fishpond">Fishpond</option>
+                <option value="SWIP/Dams">SWIP / Dams</option>
+                <option value="Fish Cage">Fish Cage</option>
+                <option value="Fish Pen">Fish Pen</option>
+                <option value="Rice-Fish">Rice-Fish</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Harvested Area (hectares)</label>
+              <input type="number" id="aqua-area" placeholder="e.g. 2.5" min="0.001" step="0.001">
+              <span class="hint">Leave blank if not recorded</span>
+            </div>
+          </div>
+
+          <div class="form-divider"></div>
+          <p style="font-size:12.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:var(--muted); margin-bottom:12px;">Species &amp; Production</p>
+
+          <div class="species-table">
+            <div class="species-table-head aqua-head">
+              <span>Fish Species</span>
+              <span>Production (kg)</span>
+              <span>Area (ha)</span>
+              <span></span>
+            </div>
+            <div id="aqua-species-rows">
+              <!-- rows injected by JS -->
+            </div>
+          </div>
+          <button class="add-species-btn" onclick="addSpeciesRow('aqua')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+            Add another species
+          </button>
+
+          <div style="display:flex; justify-content:space-between; margin-top:20px;">
+            <button class="btn btn-secondary" onclick="goStep2()">Back</button>
+            <div class="btn-actions">
+              <button class="btn btn-ghost" onclick="resetForm()">Clear form</button>
+              <button class="btn btn-primary" onclick="submitEntry()">Save Entry</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 3b: MUNICIPAL FISHERIES -->
+        <div id="section-muni" class="form-section">
+          <div class="section-badge muni"><span class="dot"></span>Municipal Fisheries Entry</div>
+
+          <div class="field-row cols-2" style="margin-bottom:16px;">
+            <div class="field">
+              <label>Sector <span class="required">*</span></label>
+              <select id="muni-sector">
+                <option value="">Select sector</option>
+                <option value="Inland Municipal">Inland Municipal</option>
+                <option value="Marine Municipal">Marine Municipal</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-divider"></div>
+          <p style="font-size:12.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:var(--muted); margin-bottom:12px;">Species &amp; Production</p>
+
+          <div class="species-table">
+            <div class="species-table-head muni-head">
+              <span>Fish Species</span>
+              <span>Production (kg)</span>
+              <span></span>
+            </div>
+            <div id="muni-species-rows"></div>
+          </div>
+          <button class="add-species-btn" onclick="addSpeciesRow('muni')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+            Add another species
+          </button>
+
+          <div style="display:flex; justify-content:space-between; margin-top:20px;">
+            <button class="btn btn-secondary" onclick="goStep2()">Back</button>
+            <div class="btn-actions">
+              <button class="btn btn-ghost" onclick="resetForm()">Clear form</button>
+              <button class="btn btn-primary" onclick="submitEntry()">Save Entry</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 3c: COMMERCIAL FISHERIES -->
+        <div id="section-comm" class="form-section">
+          <div class="section-badge comm"><span class="dot"></span>Commercial Fisheries Entry</div>
+
+          <div class="form-divider" style="margin-top:0;"></div>
+          <p style="font-size:12.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; color:var(--muted); margin-bottom:12px;">Species &amp; Production</p>
+
+          <div class="species-table">
+            <div class="species-table-head comm-head">
+              <span>Fish Species</span>
+              <span>Production (kg)</span>
+              <span></span>
+            </div>
+            <div id="comm-species-rows"></div>
+          </div>
+          <button class="add-species-btn" onclick="addSpeciesRow('comm')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+            Add another species
+          </button>
+
+          <div style="display:flex; justify-content:space-between; margin-top:20px;">
+            <button class="btn btn-secondary" onclick="goStep2()">Back</button>
+            <div class="btn-actions">
+              <button class="btn btn-ghost" onclick="resetForm()">Clear form</button>
+              <button class="btn btn-primary" onclick="submitEntry()">Save Entry</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ENTRIES LOG -->
+    <div class="entries-panel">
+      <div class="entries-header">
+        <h3>Saved Entries This Session</h3>
+        <span class="entries-count" id="entries-count">0 entries</span>
+      </div>
+      <div id="entries-body">
+        <div class="empty-entries" id="empty-entries">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 19V5a2 2 0 0 1 2-2h8.5L20 7.5V19a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>
+          <p>No entries saved yet. Fill in the form above to add your first production record.</p>
+        </div>
+        <table class="entries-table" id="entries-table" style="display:none;">
+          <thead>
+            <tr>
+              <th>Month</th>
+              <th>District</th>
+              <th>Municipality</th>
+              <th>Category</th>
+              <th>Details</th>
+              <th>Species</th>
+              <th>Production (kg)</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="entries-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Toast notification -->
+<div class="toast" id="toast">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+  <span id="toast-msg">Entry saved successfully.</span>
+</div>
+
+<script>
+// =====================================================
+// DATA: municipalities per district
+// =====================================================
+const DISTRICTS = {
+  "1": ["City of Ilagan", "Sta. Maria", "Tumauini", "Cabagan", "San Pablo"],
+  "2": ["Gamu", "Mallig", "San Isidro", "Cauayan City", "Reina Mercedes"],
+  "3": ["San Mateo", "Ramon", "Cordon", "Jones", "San Agustin"],
+  "4": ["Santiago City", "Dinapigue", "Divilacan", "Palanan"],
+  "5": ["Luna", "Quezon", "Quirino", "Maconacon", "Alicia"],
+  "6": ["Echague", "Angadanan", "Aurora", "Benito Soliven", "Ilagan"]
+};
+
+// =====================================================
+// SPECIES LISTS (from Excel file)
+// =====================================================
+const SPECIES_AQUA = [
+  "Tilapia", "Catfish (Hito)", "Carp", "Mudfish (Dalag)", "Milkfish (Bangus)",
+  "Gourami", "FW Shrimp", "Ulang", "Goldfish", "Bighead Carp", "Grass Carp",
+  "Silver Carp", "Other Species"
+];
+const SPECIES_MUNI_INLAND = [
+  "Tilapia (all kinds)", "Carp (all kinds)", "Freshwater Goby (Biya)",
+  "Freshwater Catfish (Hito)", "Freshwater Catfish (Kanduli)",
+  "Mudfish (Dalag)", "Silver Perch (Ayungin)", "Rice Eel (Kiwet)",
+  "Freshwater Eel (Igat)", "Freshwater Shrimp (Hipon)",
+  "Freshwater Crab (Talangka)", "Freshwater Clam (Tulya)",
+  "Shell (Kuhol)", "Snail (Suso)", "Gourami",
+  "Mullet (Kapak)", "Mullet (Ludong)", "Golden Fish",
+  "Others: Itawes", "Other Species"
+];
+const SPECIES_MUNI_MARINE = [
+  "Frigate Tuna (Tulingan)", "Skipjack Tuna (Gulyasan)",
+  "Yellowfin Tuna (Tambakol)", "Roundscad (Galunggong)",
+  "Big-eye Scad (Matang-baka)", "Cavalla (Talakitok)",
+  "Dolphinfish (Dorado)", "Squid (Pusit)", "Octopus (Kurita)",
+  "Lobster (Binaging)", "Hairtail (Espada)", "Siganid (Samaral)",
+  "Salmon", "Sarungan", "Umipos", "Sandig", "Parot Fish",
+  "Other Species"
+];
+const SPECIES_COMM = [
+  "Roundscad (Galunggong)", "Yellowfin Tuna (Tambakol)",
+  "Frigate Tuna (Tulingan)", "Skipjack Tuna (Gulyasan)",
+  "Big-eye Scad (Matang-baka)", "Squid (Pusit)",
+  "Sardines", "Mackerel", "Flying Fish", "Other Species"
+];
+
+// =====================================================
+// SUPABASE INIT
+// =====================================================
+const { createClient } = supabase;
+const sb = createClient('https://wwvcytjqrxkuzgylujqa.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind3dmN5dGpxcnhrdXpneWx1anFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODM4NDg0NDksImV4cCI6MjA5OTQyNDQ0OX0.YXtkYrFrwBJljdVlZWEKy5lZsHs-KcwdjwGZVMRXzrE');
+let currentUser = null;
+
+// =====================================================
+// USER DISPLAY HELPERS
+// =====================================================
+function updateUserDisplay(user) {
+  const email = user.email || '';
+  const username = email.split('@')[0];
+  const initials = username.slice(0, 2).toUpperCase();
+
+  const avatarEl = document.getElementById('user-avatar');
+  const nameEl = document.getElementById('user-name');
+  const roleEl = document.getElementById('user-role');
+
+  if (avatarEl) avatarEl.textContent = initials;
+  if (nameEl) nameEl.textContent = username;
+  if (roleEl) roleEl.textContent = user.user_metadata?.role || 'Staff';
+}
+
+// =====================================================
+// STATE
+// =====================================================
+let currentStep = 1;
+let selectedCategory = '';
+let entries = [];
+let rowCounters = { aqua: 0, muni: 0, comm: 0 };
+
+// =====================================================
+// MUNICIPALITY DROPDOWN
+// =====================================================
+function updateMuniOptions() {
+  const dist = document.getElementById('sel-district').value;
+  const muniSel = document.getElementById('sel-muni');
+  muniSel.innerHTML = '<option value="">Select municipality</option>';
+  if (dist && DISTRICTS[dist]) {
+    DISTRICTS[dist].forEach(m => {
+      const opt = document.createElement('option');
+      opt.value = m; opt.textContent = m;
+      muniSel.appendChild(opt);
+    });
+    muniSel.disabled = false;
+  } else {
+    muniSel.disabled = true;
+  }
+}
+
+// =====================================================
+// STEP NAVIGATION
+// =====================================================
+function setStep(n) {
+  currentStep = n;
+  [1,2,3].forEach(i => {
+    const el = document.getElementById('step-' + i);
+    el.classList.remove('active','done');
+    if (i < n) el.classList.add('done');
+    if (i === n) el.classList.add('active');
+  });
+}
+
+function goStep1() {
+  setStep(1);
+  document.getElementById('section-step1').style.display = '';
+  document.getElementById('section-step2').style.display = 'none';
+  hideAllDetailSections();
+  document.getElementById('form-card-title').textContent = 'Step 1: Reporting Period and Location';
+  document.getElementById('form-card-desc').textContent = 'Select the month, district, and municipality before proceeding.';
+}
+
+function goStep2() {
+  const month = document.getElementById('sel-month').value;
+  const district = document.getElementById('sel-district').value;
+  const muni = document.getElementById('sel-muni').value;
+  if (!month || !district || !muni) {
+    showToast('Please fill in month, district, and municipality.', 'error');
+    return;
+  }
+  setStep(2);
+  document.getElementById('section-step1').style.display = 'none';
+  document.getElementById('section-step2').style.display = '';
+  hideAllDetailSections();
+  document.getElementById('form-card-title').textContent = 'Step 2: Fisheries Category';
+  document.getElementById('form-card-desc').textContent = 'Choose which category this production record belongs to.';
+}
+
+function goStep3() {
+  if (!selectedCategory) {
+    showToast('Please select a category first.', 'error');
+    return;
+  }
+  setStep(3);
+  document.getElementById('section-step2').style.display = 'none';
+  showDetailSection(selectedCategory);
+  const catLabels = {Aquaculture:'Aquaculture', Municipal:'Municipal Fisheries', Commercial:'Commercial Fisheries'};
+  document.getElementById('form-card-title').textContent = 'Step 3: Production Details — ' + catLabels[selectedCategory];
+  document.getElementById('form-card-desc').textContent = 'Enter the production data for each fish species.';
+}
+
+function hideAllDetailSections() {
+  ['aqua','muni','comm'].forEach(id => {
+    document.getElementById('section-' + id).classList.remove('visible');
+  });
+}
+
+function showDetailSection(cat) {
+  hideAllDetailSections();
+  const map = {Aquaculture:'aqua', Municipal:'muni', Commercial:'comm'};
+  const id = map[cat];
+  const sec = document.getElementById('section-' + id);
+  sec.classList.add('visible');
+  // init first row if empty
+  const rowsId = id + '-species-rows';
+  if (!document.getElementById(rowsId).children.length) {
+    addSpeciesRow(id);
+  }
+}
+
+// =====================================================
+// CATEGORY SELECTION
+// =====================================================
+function selectCategory(cat) {
+  selectedCategory = cat;
+  ['aqua','muni','comm'].forEach(id => {
+    const el = document.getElementById('cat-' + id);
+    el.classList.remove('selected','muni-sel','comm-sel');
+  });
+  const map = {Aquaculture:'aqua', Municipal:'muni', Commercial:'comm'};
+  const el = document.getElementById('cat-' + map[cat]);
+  el.classList.add('selected');
+  if (cat === 'Municipal') el.classList.add('muni-sel');
+  if (cat === 'Commercial') el.classList.add('comm-sel');
+  document.getElementById('btn-next-step3').disabled = false;
+}
+
+// =====================================================
+// SPECIES ROWS
+// =====================================================
+function getSpeciesOptions(type) {
+  let list = [];
+  if (type === 'aqua') list = SPECIES_AQUA;
+  else if (type === 'muni') {
+    const sector = document.getElementById('muni-sector') ? document.getElementById('muni-sector').value : '';
+    list = sector === 'Marine Municipal' ? SPECIES_MUNI_MARINE : SPECIES_MUNI_INLAND;
+  } else if (type === 'comm') list = SPECIES_COMM;
+  return list.map(s => `<option value="${s}">${s}</option>`).join('');
+}
+
+function addSpeciesRow(type) {
+  rowCounters[type]++;
+  const rowId = type + '-row-' + rowCounters[type];
+  const container = document.getElementById(type + '-species-rows');
+  const div = document.createElement('div');
+  div.className = 'species-row ' + type + '-row';
+  div.id = rowId;
+
+  const speciesOpts = getSpeciesOptions(type);
+
+  if (type === 'aqua') {
+    div.innerHTML = `
+      <select onchange="void 0"><option value="">Select species</option>${speciesOpts}</select>
+      <input type="number" placeholder="0.00" min="0" step="0.01">
+      <input type="number" placeholder="0.00" min="0" step="0.01">
+      <button class="remove-row-btn" onclick="removeRow('${rowId}')" title="Remove row">&times;</button>
+    `;
+  } else {
+    div.innerHTML = `
+      <select onchange="void 0"><option value="">Select species</option>${speciesOpts}</select>
+      <input type="number" placeholder="0.00" min="0" step="0.01">
+      <button class="remove-row-btn" onclick="removeRow('${rowId}')" title="Remove row">&times;</button>
+    `;
+  }
+  container.appendChild(div);
+}
+
+// Refresh muni species when sector changes
+document.addEventListener('change', function(e) {
+  if (e.target.id === 'muni-sector') {
+    const container = document.getElementById('muni-species-rows');
+    container.innerHTML = '';
+    rowCounters.muni = 0;
+    addSpeciesRow('muni');
+  }
+});
+
+function removeRow(rowId) {
+  const el = document.getElementById(rowId);
+  if (el) {
+    const parent = el.parentElement;
+    el.remove();
+    if (!parent.children.length) {
+      const type = rowId.split('-')[0];
+      addSpeciesRow(type);
+    }
+  }
+}
+async function handleLogout() {
+  await sb.auth.signOut();
+  window.location.href = 'index.html';
+}
+// =====================================================
+// SUBMIT ENTRY — saves to Supabase
+// =====================================================
+async function submitEntry() {
+  const month = document.getElementById('sel-month').value;
+  const district = document.getElementById('sel-district').value;
+  const muni = document.getElementById('sel-muni').value;
+  const map = {Aquaculture:'aqua', Municipal:'muni', Commercial:'comm'};
+  const type = map[selectedCategory];
+
+  // Validate step 1 fields
+  if (!month || !district || !muni) {
+    showToast('Please complete Step 1: month, district, and municipality.', 'error');
+    return;
+  }
+
+  // Validate category-specific fields
+  if (type === 'aqua') {
+    const farm = document.getElementById('aqua-farm').value;
+    if (!farm) { showToast('Please select an aquafarm type.', 'error'); return; }
+  }
+  if (type === 'muni') {
+    const sector = document.getElementById('muni-sector').value;
+    if (!sector) { showToast('Please select a sector (Inland or Marine).', 'error'); return; }
+  }
+
+  // Collect species rows
+  const rows = document.querySelectorAll('#' + type + '-species-rows .species-row');
+  const speciesEntries = [];
+  rows.forEach(row => {
+    const sel = row.querySelector('select');
+    const inputs = row.querySelectorAll('input');
+    const species = sel ? sel.value : '';
+    const prod = inputs[0] ? parseFloat(inputs[0].value) : 0;
+    const area2 = inputs[1] ? parseFloat(inputs[1].value) : null;
+    if (species && prod > 0) {
+      const entry = { species, production: prod };
+      if (area2 !== null && !isNaN(area2)) entry.areaPerSpecies = area2;
+      speciesEntries.push(entry);
+    }
+  });
+
+  if (!speciesEntries.length) {
+    showToast('Please add at least one species with a production value greater than 0.', 'error');
+    return;
+  }
+
+  // Disable save button to prevent double submit
+  const saveBtn = document.querySelector('button[onclick="submitEntry()"]');
+  if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Saving...'; }
+
+  try {
+    // Get session from Supabase
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) { window.location.href = 'index.html'; return; }
+
+    // Build the production_entries row
+    const entryPayload = {
+      month,
+      year: new Date().getFullYear(),
+      district_number: district,
+      municipality: muni,
+      category: selectedCategory,
+      submitted_by: session.user.id
+    };
+
+    if (type === 'aqua') {
+      entryPayload.aquafarm_type = document.getElementById('aqua-farm').value;
+      const areaVal = document.getElementById('aqua-area').value;
+      entryPayload.area_harvested_ha = areaVal !== '' ? parseFloat(areaVal) : null;
+    }
+    if (type === 'muni') {
+      entryPayload.sector = document.getElementById('muni-sector').value;
+    }
+
+    // Insert into production_entries
+    const { data: entryData, error: entryError } = await sb
+      .from('production_entries')
+      .insert([entryPayload])
+      .select()
+      .single();
+
+    if (entryError) {
+      console.error(entryError);
+      showToast('Error saving entry: ' + entryError.message, 'error');
+      if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save Entry'; }
+      return;
+    }
+
+    // Insert all species rows into production_details
+    const detailsPayload = speciesEntries.map(s => ({
+      entry_id: entryData.id,
+      species_name: s.species,
+      production_kg: s.production,
+      area_ha: s.areaPerSpecies || null
+    }));
+
+    const { error: detailsError } = await sb
+      .from('production_details')
+      .insert(detailsPayload);
+
+    if (detailsError) {
+      console.error(detailsError);
+      showToast('Entry saved but species details had an error: ' + detailsError.message, 'error');
+      if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save Entry'; }
+      return;
+    }
+
+    // Build local entry object for the session log table
+    const localEntry = {
+      id: entryData.id,
+      month, district, muni,
+      category: selectedCategory,
+      details: type === 'aqua'
+        ? { farm: entryPayload.aquafarm_type, area: entryPayload.area_harvested_ha }
+        : type === 'muni'
+        ? { sector: entryPayload.sector }
+        : {},
+      species: speciesEntries,
+      totalProduction: speciesEntries.reduce((s, e) => s + e.production, 0)
+    };
+
+    entries.push(localEntry);
+    renderEntries();
+    showToast('Entry saved to database successfully.', 'success');
+    resetForm();
+    goStep1();
+
+  } catch (err) {
+    console.error(err);
+    showToast('Unexpected error. Please try again.', 'error');
+  } finally {
+    if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Save Entry'; }
+  }
+}
+
+// =====================================================
+// RENDER ENTRIES
+// =====================================================
+function renderEntries() {
+  const tbody = document.getElementById('entries-tbody');
+  const table = document.getElementById('entries-table');
+  const empty = document.getElementById('empty-entries');
+  const count = document.getElementById('entries-count');
+
+  count.textContent = entries.length + ' ' + (entries.length === 1 ? 'entry' : 'entries');
+
+  if (!entries.length) {
+    table.style.display = 'none';
+    empty.style.display = 'block';
+    return;
+  }
+  table.style.display = '';
+  empty.style.display = 'none';
+
+  const catClass = {Aquaculture:'aqua', Municipal:'muni', Commercial:'comm'};
+
+  tbody.innerHTML = entries.map(e => {
+    const speciesList = e.species.map(s => `${s.species} (${s.production.toLocaleString()} kg)`).join(', ');
+    let detailStr = '';
+    if (e.category === 'Aquaculture') detailStr = e.details.farm + ' &middot; ' + e.details.area + ' ha';
+    if (e.category === 'Municipal') detailStr = e.details.sector;
+    const totalFmt = e.totalProduction.toLocaleString('en-US', {maximumFractionDigits: 2});
+    return `<tr>
+      <td>${e.month}</td>
+      <td class="mono">Dist. ${e.district}</td>
+      <td>${e.muni}</td>
+      <td><span class="tag ${catClass[e.category]}">${e.category}</span></td>
+      <td style="font-size:12px;color:var(--muted)">${detailStr}</td>
+      <td style="font-size:12px;max-width:200px;">${speciesList}</td>
+      <td class="mono">${totalFmt}</td>
+      <td><span class="delete-entry" onclick="deleteEntry(${e.id})" title="Remove entry">&times;</span></td>
+    </tr>`;
+  }).join('');
+}
+
+async function deleteEntry(id) {
+  if (!confirm('Are you sure you want to delete this entry? This cannot be undone.')) return;
+
+  const { error } = await sb
+    .from('production_entries')
+    .delete()
+    .eq('id', id);
+
+  if (error) {
+    showToast('Could not delete entry: ' + error.message, 'error');
+    return;
+  }
+
+  entries = entries.filter(e => e.id !== id);
+  renderEntries();
+  showToast('Entry deleted.', 'success');
+}
+
+// =====================================================
+// LOAD SAVED ENTRIES FROM SUPABASE
+// =====================================================
+async function loadSavedEntries() {
+  const { data, error } = await sb
+    .from('production_entries')
+    .select(`
+      id,
+      month,
+      year,
+      district_number,
+      municipality,
+      category,
+      aquafarm_type,
+      area_harvested_ha,
+      sector,
+      created_at,
+      production_details (
+        species_name,
+        production_kg,
+        area_ha
+      )
+    `)
+    .order('created_at', { ascending: false })
+    .limit(50);
+
+  if (error) {
+    console.error('Error loading entries:', error);
+    return;
+  }
+
+  // Map Supabase data to local entry format
+  entries = data.map(e => ({
+    id: e.id,
+    month: e.month,
+    district: e.district_number,
+    muni: e.municipality,
+    category: e.category,
+    details: e.category === 'Aquaculture'
+      ? { farm: e.aquafarm_type, area: e.area_harvested_ha }
+      : e.category === 'Municipal'
+      ? { sector: e.sector }
+      : {},
+    species: (e.production_details || []).map(d => ({
+      species: d.species_name,
+      production: d.production_kg,
+      areaPerSpecies: d.area_ha
+    })),
+    totalProduction: (e.production_details || []).reduce((s, d) => s + parseFloat(d.production_kg), 0)
+  }));
+
+  renderEntries();
+}
+
+// =====================================================
+// RESET
+// =====================================================
+function resetForm() {
+  selectedCategory = '';
+  ['aqua','muni','comm'].forEach(id => {
+    document.getElementById('section-' + id).classList.remove('visible');
+    document.getElementById(id + '-species-rows').innerHTML = '';
+    rowCounters[id] = 0;
+  });
+  ['cat-aqua','cat-muni','cat-comm'].forEach(id => {
+    document.getElementById(id).classList.remove('selected','muni-sel','comm-sel');
+  });
+  const farmSel = document.getElementById('aqua-farm');
+  const areaIn = document.getElementById('aqua-area');
+  const sectorSel = document.getElementById('muni-sector');
+  if (farmSel) farmSel.value = '';
+  if (areaIn) areaIn.value = '';
+  if (sectorSel) sectorSel.value = '';
+  document.getElementById('btn-next-step3').disabled = true;
+}
+
+// =====================================================
+// TOAST
+// =====================================================
+function showToast(msg, type = 'success') {
+  const toast = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  toast.className = 'toast ' + type + ' show';
+  setTimeout(() => { toast.className = 'toast'; }, 3000);
+}
+
+// =====================================================
+// SESSION CHECK — Supabase native (no PHP needed)
+// =====================================================
+(async function checkSession() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) {
+    window.location.href = 'index.html';
+    return;
+  }
+  currentUser = session.user;
+  updateUserDisplay(session.user);
+  loadSavedEntries();
+})();
+
+async function handleLogout() {
+  await sb.auth.signOut();
+  window.location.href = 'index.html';
+}
+</script>
+</body>
+</html>
