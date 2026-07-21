@@ -8,6 +8,7 @@
 <title>Production Records | BFARPFO</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="icon" href="images/bfar-da.png" type="image/x-icon">
+
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Source+Sans+3:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -117,13 +118,12 @@ body { font-family: 'Source Sans 3', sans-serif; background: var(--body-bg); col
   border-top: 1px solid var(--sidebar-border);
 }
 .logout-btn {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  font-size: 12px;
+  display: flex; align-items: center; gap: 9px;
+  font-size: 12px; color: var(--sidebar-muted);
   color: var(--sidebar-muted);
-  cursor: pointer;
-  transition: color 0.12s;
+  cursor: pointer; transition: color 0.12s; background: none; border: none;
+  font-family: 'Source Sans 3', sans-serif; width: 100%; text-align: left;
+  padding: 0;
 }
 .logout-btn:hover { color: #e87461; }
 .logout-btn svg { width: 14px; height: 14px; }
