@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Dashboard | BFARPFO Production Monitoring</title>
@@ -257,7 +256,6 @@ tr:hover td { background: rgba(31,122,108,0.03); }
 @media (max-width: 1100px) { .stat-grid { grid-template-columns: repeat(2,1fr); } .panel-grid { grid-template-columns: 1fr; } }
 @media (max-width: 760px) { .sidebar { display: none; } .main { margin-left: 0; } .stat-grid { grid-template-columns: 1fr; } }
 </style>
-<script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
@@ -520,14 +518,14 @@ function updateUserDisplay(user) {
     return;
   }
   updateUserDisplay(session.user);
-  renderAll();
+  await loadDashboardData();   // pull real entries from Supabase
+  subscribeToRealtimeChanges(); // then keep listening for changes
 })();
 
 async function handleLogout() {
   await sb.auth.signOut();
   window.location.href = 'index.html';
 }
-
 
 // Canonical district -> municipality map (source of truth)
 const DISTRICTS = { "1": ["City of Ilagan", "Cabagan", "Delfin Albano", "Divilacan", "Maconacon","San Pablo", "Santa Maria", "Santo Tomas","Tumauini"], "2": ["Benito Soliven", "Gamu", "Naguilian", "Palanan", "Reina Mercedes", "San Mariano"], "3": ["Alicia", "Angadanan", "Cabatuan", "Ramon", "San Mateo"], "4": ["Santiago","Cordon","Dinapigue","Jones", "San Agustin"], "5": ["Aurora", "Burgos", "Luna", "Mallig", "Quezon", "Quirino", "Roxas", "San Manuel"], "6": ["Cauayan", "Echague", "San Guillermo", "San Isidro"] };
@@ -542,16 +540,107 @@ Object.entries(DISTRICTS).forEach(([dist, munis]) => {
   munis.forEach(m => { MUNI_TO_DISTRICT[m] = dist; });
 });
 
-// Correct every record's district against the canonical source, so filtering
-// is always right even if a record was entered with the wrong district.
-ALL_RECORDS.forEach(r => {
-  const canonicalName = MUNI_ALIASES[r.muni] || r.muni;
-  const correctDistrict = MUNI_TO_DISTRICT[canonicalName];
-  if (correctDistrict) r.district = correctDistrict;
-});
+// production-records.html stores the full month name (e.g. "January").
+// The dashboard's chart/filter code keys months as short lowercase codes.
+const MONTH_ORDER = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const MONTH_TO_KEY = { January:'jan', February:'feb', March:'mar', April:'apr', May:'may', June:'jun', July:'jul', August:'aug', September:'sep', October:'oct', November:'nov', December:'dec' };
 
+let ALL_RECORDS = [];
 let currentSort = {col:'production', dir:'desc'};
-let filtered = [...ALL_RECORDS];
+let filtered = [];
+
+// =====================================================
+// LIVE DATA — fetch entries + species details from Supabase
+// and flatten them into the per-species rows the charts expect
+// =====================================================
+async function fetchRecordsFromSupabase() {
+  const { data, error } = await sb
+    .from('production_entries')
+    .select(`
+      id,
+      month,
+      year,
+      district_number,
+      municipality,
+      category,
+      aquafarm_type,
+      sector,
+      production_details ( species_name, production_kg )
+    `)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error('Error loading production data:', error);
+    return [];
+  }
+
+  const rows = [];
+  (data || []).forEach(entry => {
+    const farm = entry.category === 'Aquaculture' ? entry.aquafarm_type
+               : entry.category === 'Municipal' ? entry.sector
+               : '';
+    (entry.production_details || []).forEach((d, i) => {
+      rows.push({
+        id: `${entry.id}-${i}`,
+        month: MONTH_TO_KEY[entry.month] || String(entry.month || '').slice(0,3).toLowerCase(),
+        monthLabel: entry.month,
+        district: String(entry.district_number),
+        muni: entry.municipality,
+        category: entry.category,
+        farm: farm || '',
+        species: d.species_name,
+        production: parseFloat(d.production_kg) || 0
+      });
+    });
+  });
+  return rows;
+}
+
+// Rebuild the "All Months" dropdown from whatever months actually have data,
+// instead of a hardcoded Jan/Feb list — so any of the 12 months shows up.
+function refreshMonthFilterOptions() {
+  const monthSelect = document.getElementById('filter-month');
+  const previousValue = monthSelect.value;
+
+  const presentMonths = [...new Set(ALL_RECORDS.map(r => r.monthLabel))]
+    .sort((a, b) => MONTH_ORDER.indexOf(a) - MONTH_ORDER.indexOf(b));
+
+  monthSelect.innerHTML = '<option value="all">All Months</option>' +
+    presentMonths.map(m => `<option value="${MONTH_TO_KEY[m]}">${m} 2026</option>`).join('');
+
+  const stillValid = presentMonths.some(m => MONTH_TO_KEY[m] === previousValue);
+  monthSelect.value = stillValid ? previousValue : 'all';
+}
+
+async function loadDashboardData() {
+  ALL_RECORDS = await fetchRecordsFromSupabase();
+
+  // Correct every record's district against the canonical source, so filtering
+  // is always right even if a record was entered with the wrong district.
+  ALL_RECORDS.forEach(r => {
+    const canonicalName = MUNI_ALIASES[r.muni] || r.muni;
+    const correctDistrict = MUNI_TO_DISTRICT[canonicalName];
+    if (correctDistrict) r.district = correctDistrict;
+  });
+
+  refreshMonthFilterOptions();
+  onDistrictChange(); // rebuilds municipality dropdown + re-applies filters + renders
+}
+
+// =====================================================
+// REALTIME — subscribe to inserts/updates/deletes on both
+// tables and refresh the dashboard the moment anything changes
+// =====================================================
+function subscribeToRealtimeChanges() {
+  sb.channel('production-dashboard')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'production_entries' }, () => {
+      loadDashboardData();
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'production_details' }, () => {
+      loadDashboardData();
+    })
+    .subscribe();
+}
 
 function applyFilters() {
   const month = document.getElementById('filter-month').value;
@@ -628,7 +717,7 @@ function updateTopbarSub() {
   const muni = document.getElementById('filter-muni').value;
   const cat = document.getElementById('filter-cat').value;
   let parts = ['2026 Isabela'];
-  if (month !== 'all') parts.push(month === 'jan' ? 'January' : 'February');
+  if (month !== 'all') parts.push(MONTH_ORDER.find(m => MONTH_TO_KEY[m] === month) || month);
   if (muni !== 'all') parts.push(muni);
   if (cat !== 'all') parts.push(cat);
   document.getElementById('topbar-sub').textContent = parts.join(' \u00b7 ') + ' Fisheries Production';
@@ -637,8 +726,10 @@ function updateTopbarSub() {
 function renderChips() {
   const chips = document.getElementById('filter-chips');
   chips.innerHTML = '';
+  const monthLabels = {};
+  MONTH_ORDER.forEach(m => { monthLabels[MONTH_TO_KEY[m]] = m + ' 2026'; });
   const labels = {
-    'filter-month': {jan:'January 2026', feb:'February 2026'},
+    'filter-month': monthLabels,
     'filter-district': {1:'District 1',2:'District 2',3:'District 3',4:'District 4',5:'District 5',6:'District 6'},
     'filter-muni': null,
     'filter-cat': {Aquaculture:'Aquaculture',Municipal:'Municipal Fisheries',Commercial:'Commercial Fisheries'}
@@ -679,22 +770,27 @@ function renderStats() {
 function renderBarChart() {
   const chart = document.getElementById('bar-chart');
   const month = document.getElementById('filter-month').value;
+
+  // Which months to show bars for: just the selected one, or every month
+  // present in the filtered data (in calendar order) when "All Months" is chosen.
+  const monthsToShow = month !== 'all'
+    ? [month]
+    : [...new Set(filtered.map(r => r.month))]
+        .sort((a,b) => MONTH_ORDER.findIndex(m => MONTH_TO_KEY[m]===a) - MONTH_ORDER.findIndex(m => MONTH_TO_KEY[m]===b));
+
   let bars = [];
-  if (month === 'all' || month === 'jan') {
-    const aquaJan = filtered.filter(r => r.category === 'Aquaculture' && r.month === 'jan').reduce((s,r) => s+r.production,0);
-    const muniJan = filtered.filter(r => r.category === 'Municipal' && r.month === 'jan').reduce((s,r) => s+r.production,0);
-    if (aquaJan > 0) bars.push({label:'Aqua. Jan', val:aquaJan, cls:'aqua'});
-    if (muniJan > 0) bars.push({label:'Mun. Jan', val:muniJan, cls:'muni'});
-  }
-  if (month === 'all' || month === 'feb') {
-    const aquaFeb = filtered.filter(r => r.category === 'Aquaculture' && r.month === 'feb').reduce((s,r) => s+r.production,0);
-    const muniFeb = filtered.filter(r => r.category === 'Municipal' && r.month === 'feb').reduce((s,r) => s+r.production,0);
-    if (aquaFeb > 0) bars.push({label:'Aqua. Feb', val:aquaFeb, cls:'aqua'});
-    if (muniFeb > 0) bars.push({label:'Mun. Feb', val:muniFeb, cls:'muni'});
-  }
+  monthsToShow.forEach(mKey => {
+    const label = (MONTH_ORDER.find(m => MONTH_TO_KEY[m] === mKey) || mKey).slice(0,3);
+    const aqua = filtered.filter(r => r.category === 'Aquaculture' && r.month === mKey).reduce((s,r) => s+r.production,0);
+    const muni = filtered.filter(r => r.category === 'Municipal' && r.month === mKey).reduce((s,r) => s+r.production,0);
+    if (aqua > 0) bars.push({label:`Aqua. ${label}`, val:aqua, cls:'aqua'});
+    if (muni > 0) bars.push({label:`Mun. ${label}`, val:muni, cls:'muni'});
+  });
+
   if (!bars.length) { chart.innerHTML = '<div style="text-align:center;padding:48px;color:var(--muted);font-size:13px;">No data for selected filters.</div>'; return; }
   const maxVal = Math.max(...bars.map(b => b.val));
-  const metaMonths = month === 'jan' ? 'JAN 2026' : month === 'feb' ? 'FEB 2026' : 'JAN + FEB 2026';
+  const monthLabel = MONTH_ORDER.find(m => MONTH_TO_KEY[m] === month);
+  const metaMonths = monthLabel ? monthLabel.slice(0,3).toUpperCase() + ' 2026' : monthsToShow.map(k => k.toUpperCase()).join(' + ') + ' 2026';
   document.getElementById('chart-meta').textContent = metaMonths + ' \u00b7 KG';
   chart.innerHTML = bars.map(b => {
     const pct = maxVal > 0 ? Math.max((b.val/maxVal)*100, 2) : 2;
@@ -740,7 +836,7 @@ function renderTable() {
     <tr>
       <td class="mono">${r.district}</td>
       <td>${r.muni}</td>
-      <td class="mono">${r.month === 'jan' ? 'Jan 2026' : 'Feb 2026'}</td>
+      <td class="mono">${(r.monthLabel || r.month).slice(0,3)} 2026</td>
       <td><span class="tag ${catClass[r.category]||''}">${r.category}</span></td>
       <td style="font-size:12px;color:var(--muted)">${r.farm}</td>
       <td>${r.species}</td>
